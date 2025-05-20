@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Number Input with Arrows</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f3f4f6;
+            touch-action: none;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+        #numberInput {
+            font-size: calc(6rem + 5vw);
+            width: 100vw;
+            height: calc(100vh - 80px);
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            outline: none;
+            color: #000;
+            overflow-wrap: break-word;
+            word-break: break-all;
+            white-space: normal;
+            line-height: 1.2;
+            overflow: hidden;
+            box-sizing: border-box;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: text;
+            min-height: calc(6rem + 5vw);
+            direction: ltr;
+            caret-color: transparent; /* Hide cursor */
+        }
+        /* Animation for button clicks */
+        #numberInput.animate {
+            animation: fadeInBlur 0.3s ease-in-out;
+        }
+        @keyframes fadeInBlur {
+            from {
+                opacity: 0;
+                filter: blur(5px);
+            }
+            to {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+        .arrow-button {
+            width: calc(100px + 2vw);
+            height: calc(60px + 2vw);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(2rem + 1vw);
+            cursor: pointer;
+            border: 2px solid #d1d5db;
+            background-color: #ffffff;
+            transition: background-color 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .arrow-button:hover {
+            background-color: #e5e7eb;
+        }
+        #upButton {
+            border-radius: 0.5rem 0 0 0.5rem;
+            border-right: none;
+        }
+        #downButton {
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .button-container {
+            position: fixed;
+            bottom: 10px;
+            display: flex;
+            justify-content: center;
+            width: 100vw;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="numberInput" contenteditable="true">0</div>
+    <div class="button-container">
+        <div id="upButton" class="arrow-button">↑</div>
+        <div id="downButton" class="arrow-button">↓</div>
+    </div>
+
+    <script>
+        const numberInput = document.getElementById('numberInput');
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+
+        // Prevent all scrolling
+        document.body.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+        document.body.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+        // Ensure input starts at 0 on page load
+        window.onload = () => {
+            numberInput.textContent = '0';
+        };
+
+        // Handle single click updates with animation
+        function updateValue(direction) {
+            let value = numberInput.textContent.trim();
+            if (isNaN(value) || value === '') {
+                numberInput.textContent = direction === 'up' ? '1' : '0';
+            } else {
+                let newValue = parseFloat(value) + (direction === 'up' ? 1 : -1);
+                numberInput.textContent = newValue;
+            }
+            // Trigger animation
+            numberInput.classList.remove('animate');
+            void numberInput.offsetWidth; // Force reflow
+            numberInput.classList.add('animate');
+        }
+
+        upButton.addEventListener('click', () => updateValue('up'));
+        downButton.addEventListener('click', () => updateValue('down'));
+
+        // Handle touch events for single taps
+        upButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            updateValue('up');
+        });
+        downButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            updateValue('down');
+        });
+
+        // Prevent context menu on long press
+        upButton.addEventListener('contextmenu', (e) => e.preventDefault());
+        downButton.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Clear content on click
+        numberInput.addEventListener('click', () => {
+            numberInput.textContent = '';
+            numberInput.focus(); // Keep focus for typing
+        });
+
+        // Handle typing, append characters, no animation
+        numberInput.addEventListener('keydown', (e) => {
+            e.preventDefault(); // Prevent default key behavior
+            if (e.key === 'Enter') {
+                return; // Ignore Enter key
+            }
+            if (e.key.length === 1) { // Printable characters
+                numberInput.textContent += e.key;
+            } else if (e.key === 'Backspace') { // Handle backspace
+                numberInput.textContent = numberInput.textContent.slice(0, -1);
+            }
+            // Remove any HTML tags
+            if (numberInput.innerHTML.includes('<')) {
+                numberInput.textContent = numberInput.textContent.replace(/[<].*/g, '');
+            }
+        });
+
+        // Prevent pasting rich content, append plain text, no animation
+        numberInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = e.clipboardData.getData('text/plain');
+            numberInput.textContent += text;
+            // Remove any HTML tags or newlines
+            if (numberInput.innerHTML.includes('<') || numberInput.innerHTML.includes('\n')) {
+                numberInput.textContent = numberInput.textContent.replace(/[\n<].*/g, '');
+            }
+        });
+    </script>
+</body>
+</html>
